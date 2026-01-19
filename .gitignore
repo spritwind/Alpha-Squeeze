@@ -1,0 +1,100 @@
+# Alpha Squeeze - Git Ignore
+
+# IDE
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.idea/
+
+# .NET
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.cache
+packages/
+*.nupkg
+project.lock.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Playwright
+playwright/.cache/
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+appsettings.Development.json
+appsettings.*.json
+!appsettings.json
+
+# Secrets
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Database
+*.mdf
+*.ldf
+*.bak
+
+# Node (for React)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+TestResults/
+
+# gRPC generated files
+*_pb2.py
+*_pb2_grpc.py
+*_pb2.pyi
+*.cs.meta
+
+# Temporary
+*.tmp
+*.temp
+*.swp
+
+# Docker
+.docker/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Keep environment template
+!.env.example

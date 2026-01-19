@@ -1,0 +1,48 @@
+# Python Engine Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    unixodbc-dev \
+    curl \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Microsoft ODBC driver for SQL Server (Debian 12 Bookworm compatible)
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/12/prod bookworm main" > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+COPY python/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Skip Playwright installation (not needed for gRPC server)
+# If scraping is needed, uncomment:
+# RUN playwright install chromium && playwright install-deps chromium
+
+# Copy source code
+COPY python/ ./python/
+COPY proto/ ./proto/
+
+# Generate gRPC code and fix imports for package structure
+RUN python -m grpc_tools.protoc \
+    -I./proto \
+    --python_out=./python/engine/protos \
+    --grpc_python_out=./python/engine/protos \
+    ./proto/squeeze.proto \
+    && sed -i 's/import squeeze_pb2/from . import squeeze_pb2/' ./python/engine/protos/squeeze_pb2_grpc.py \
+    || echo "Proto generation skipped"
+
+# Set Python path to include the python module directory
+ENV PYTHONPATH=/app/python
+
+EXPOSE 50051
+
+# Run the gRPC server
+CMD ["python", "-m", "engine.server"]

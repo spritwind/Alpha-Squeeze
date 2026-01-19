@@ -1,0 +1,39 @@
+# .NET API Dockerfile
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copy solution and project files first for layer caching
+COPY ["src/AlphaSqueeze.Api/AlphaSqueeze.Api.csproj", "AlphaSqueeze.Api/"]
+COPY ["src/AlphaSqueeze.Core/AlphaSqueeze.Core.csproj", "AlphaSqueeze.Core/"]
+COPY ["src/AlphaSqueeze.Data/AlphaSqueeze.Data.csproj", "AlphaSqueeze.Data/"]
+COPY ["src/AlphaSqueeze.Shared/AlphaSqueeze.Shared.csproj", "AlphaSqueeze.Shared/"]
+
+# Restore dependencies (this layer is cached if csproj files don't change)
+RUN dotnet restore "AlphaSqueeze.Api/AlphaSqueeze.Api.csproj"
+
+# Copy all source code (bin/obj excluded via .dockerignore)
+COPY src/ .
+
+# Copy proto files to correct relative path (../../proto from /src/AlphaSqueeze.Shared = /proto)
+COPY proto/ /proto/
+
+# Build and publish
+RUN dotnet publish "AlphaSqueeze.Api/AlphaSqueeze.Api.csproj" \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+# Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+WORKDIR /app
+
+# Copy published app
+COPY --from=build /app/publish .
+
+# Configure ASP.NET Core
+ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+EXPOSE 80
+
+ENTRYPOINT ["dotnet", "AlphaSqueeze.Api.dll"]

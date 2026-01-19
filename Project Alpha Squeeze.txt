@@ -1,0 +1,44 @@
+Project Alpha Squeeze: 系統架構深度設計書 (V1.1)1. 系統願景與核心目標本系統定位為**「戰術級量化決策支援平台」**。主要針對台股（TWSE/TPEx）環境，透過盤後籌碼大數據（借券、券資比）與衍生性商品市場訊號（權證 IV、CB 溢價），找出具備「高壓縮、高爆發」潛力的標的，為下一交易日提供進場策略。2. 系統邏輯架構圖 (Logical Architecture)本系統採異構雙核設計，確保「運算效能」與「業務邏輯」分離。3. 資料庫設計 (MSSQL Schema)使用 Dapper 作為資料存取層，資料庫採用 MSSQL (SQL Server)。3.1 股票日指標表 (DailyStockMetrics)存儲 FinMind 抓取的籌碼與價格數據。SQLCREATE TABLE DailyStockMetrics (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    Ticker NVARCHAR(10) NOT NULL,            -- 股票代號
+    TradeDate DATE NOT NULL,                 -- 交易日期
+    ClosePrice DECIMAL(18, 2),               -- 收盤價
+    BorrowingBalanceChange INT,              -- 借券賣出餘額增減 (核心指標)
+    MarginRatio DECIMAL(18, 2),              -- 券資比 (%)
+    HistoricalVolatility20D DECIMAL(18, 4),  -- 20日歷史波動率 (HV)
+    Volume INT,                              -- 成交量
+    CONSTRAINT UC_Ticker_Date UNIQUE (Ticker, TradeDate)
+);
+CREATE CLUSTERED INDEX IX_TradeDate ON DailyStockMetrics(TradeDate);
+3.2 權證實時數據表 (WarrantMarketData)存儲 Scraper 抓取的權證端數據。SQLCREATE TABLE WarrantMarketData (
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    UnderlyingTicker NVARCHAR(10),           -- 標的代號
+    WarrantTicker NVARCHAR(10),              -- 權證代號
+    ImpliedVolatility DECIMAL(18, 4),        -- 隱含波動率 (IV)
+    EffectiveLeverage DECIMAL(18, 2),        -- 實質槓桿
+    SpreadRatio DECIMAL(18, 4),              -- 差槓比
+    ExpiryDate DATE,                         -- 到期日
+    LastUpdate DATETIME DEFAULT GETDATE()
+);
+4. 跨語言通訊：gRPC 定義 (squeeze.proto).NET 與 Python 之間的通訊契約，採用二進制傳輸以極大化效能。Protocol Bufferssyntax = "proto3";
+package squeeze;
+
+service SqueezeEngine {
+  rpc GetSqueezeSignal (SqueezeRequest) returns (SqueezeResponse);
+}
+
+message SqueezeRequest {
+  string ticker = 1;
+  double borrow_change = 2;  // 借券變化量
+  double margin_ratio = 3;   // 券資比
+  double current_iv = 4;     // 當前權證 IV
+  double hv_20d = 5;         // 標的歷史波動率
+  double cb_premium = 6;     // CB 溢價 (預留)
+}
+
+message SqueezeResponse {
+  int32 score = 1;           // 0-100 評分
+  string trend = 2;          // 趨勢預判 (BULLISH/NEUTRAL/BEARISH)
+  string comment = 3;        // 戰術建議
+}
+5. 核心權重演算法 (Quant Scoring Logic)此邏輯將由 Python 端使用 Polars 執行，得分 $S$ 的計算公式如下：$$S = (W_B \cdot F_B) + (W_G \cdot F_G) + (W_M \cdot F_M) + (W_V \cdot F_V)$$維度參數 (F)權重 (W)判定邏輯 (Score 100)法人空頭 (B)借券賣出餘額變化35%負值（回補）越多，得分越高。Gamma 效應 (G)$IV - HV$ 乖離25%若 $IV < HV$（權證低估），得分越高。散戶燃料 (M)券資比20%數值越高（空單擁擠），得分越高。價量動能 (V)價格與量能組合20%帶量突破壓力位，得分越高。6. 元件職責與流程 (Pipeline)Step 1: 盤後數據擷取 (Python Worker)FinMind API： 每日 18:30 觸發，抓取全台股「借券賣出餘額」與「券資比」。Playwright Scraper： 掃描元大、統一等指標發行商網站，提取優質 Call 權證 IV。資料持久化： 透過 Python 直接寫入 MSSQL（或傳回 .NET 寫入）。Step 2: 訊號分析 (Python gRPC Server)計算 HV： 利用 Polars 計算各標的之 20 日滾動歷史波動率。評分運算： 執行上述 $S$ 公式，並將結果標註「低/中/高」軋空潛力。Step 3: 前端呈現與通知 (.NET + React).NET API： 暴露 Endpoint 給 React 前端，並執行 Dapper 查詢。LINE Notify： 每晚 20:00 自動推播「明日高勝率軋空清單」至 LINE。React Dashboard： 視覺化標的的 $IV/HV$ 走勢圖，並標記法人空頭撤退的拐點。7. 開發注意事項 (Engineering Best Practices)Dapper 效能： 對於每日數千筆的寫入，使用 ExecuteBatch 或 MSSQL BulkCopy 提升速度。Scraper 穩定性： 針對 Playwright 加入 Retry 機制，並將爬取失敗的標的記錄在 Log 中，避免資料缺口。gRPC 異常處理： 當 Python 計算引擎未啟動時，.NET 客戶端應具備降級處理（Degradation），先顯示基本籌碼數據。

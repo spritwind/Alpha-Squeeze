@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package squeeze;
+
+option csharp_namespace = "AlphaSqueeze.Shared.Grpc";
+
+// gRPC service for squeeze signal analysis
+service SqueezeEngine {
+  // Get squeeze signal for a specific ticker
+  rpc GetSqueezeSignal (SqueezeRequest) returns (SqueezeResponse);
+
+  // Batch analysis for multiple tickers
+  rpc GetBatchSignals (BatchSqueezeRequest) returns (BatchSqueezeResponse);
+
+  // Get top squeeze candidates
+  rpc GetTopCandidates (TopCandidatesRequest) returns (TopCandidatesResponse);
+}
+
+// Request for single ticker analysis
+message SqueezeRequest {
+  string ticker = 1;              // 股票代號
+  double borrow_change = 2;       // 借券變化量
+  double margin_ratio = 3;        // 券資比
+  double current_iv = 4;          // 當前權證 IV
+  double hv_20d = 5;              // 標的歷史波動率
+  double cb_premium = 6;          // CB 溢價 (預留)
+  double close_price = 7;         // 收盤價
+  int64 volume = 8;               // 成交量
+}
+
+// Response with squeeze analysis
+message SqueezeResponse {
+  string ticker = 1;              // 股票代號
+  int32 score = 2;                // 0-100 評分
+  string trend = 3;               // 趨勢預判 (BULLISH/NEUTRAL/BEARISH)
+  string comment = 4;             // 戰術建議
+  FactorScores factors = 5;       // 各維度分數
+}
+
+// Individual factor scores
+message FactorScores {
+  double borrow_score = 1;        // 法人空頭分數 (F_B)
+  double gamma_score = 2;         // Gamma效應分數 (F_G)
+  double margin_score = 3;        // 散戶燃料分數 (F_M)
+  double momentum_score = 4;      // 價量動能分數 (F_V)
+}
+
+// Batch request for multiple tickers
+message BatchSqueezeRequest {
+  repeated SqueezeRequest requests = 1;
+}
+
+// Batch response
+message BatchSqueezeResponse {
+  repeated SqueezeResponse responses = 1;
+}
+
+// Request for top squeeze candidates
+message TopCandidatesRequest {
+  int32 limit = 1;                // 返回數量上限 (default: 10)
+  string date = 2;                // 交易日期 (YYYY-MM-DD)
+  int32 min_score = 3;            // 最低分數門檻 (default: 60)
+}
+
+// Response with top candidates
+message TopCandidatesResponse {
+  repeated SqueezeResponse candidates = 1;
+  string analysis_date = 2;       // 分析日期
+  string generated_at = 3;        // 產生時間
+}

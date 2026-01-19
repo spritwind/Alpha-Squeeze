@@ -1,0 +1,65 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+
+# .NET build outputs
+**/bin/
+**/obj/
+*.dll
+*.pdb
+*.exe
+
+# Python
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Node
+**/node_modules/
+web/dist/
+
+# Logs
+*.log
+logs/
+
+# Environment files (but keep example)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Secrets
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Testing
+coverage/
+TestResults/
+playwright-report/
+test-results/
+
+# Docker
+.docker/
+
+# Documentation
+*.md
+!README.md
+
+# Claude
+.claude/

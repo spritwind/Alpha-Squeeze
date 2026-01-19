@@ -1,0 +1,218 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  NODE_VERSION: '20'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test-python:
+    runs-on: ubuntu-latest
+    name: Python Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          cd python
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+
+      - name: Run unit tests
+        run: |
+          cd python
+          pytest tests/ -v --cov=engine --cov=scrapers --cov=workers --cov-report=xml --cov-report=term-missing
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: python/coverage.xml
+          flags: python
+          name: python-coverage
+          fail_ci_if_error: false
+
+  test-dotnet:
+    runs-on: ubuntu-latest
+    name: .NET Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          flags: dotnet
+          name: dotnet-coverage
+          fail_ci_if_error: false
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    name: Frontend Tests
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd web
+          npm ci
+
+      - name: Type check
+        run: |
+          cd web
+          npm run typecheck || true
+
+      - name: Lint
+        run: |
+          cd web
+          npm run lint || true
+
+      - name: Build
+        run: |
+          cd web
+          npm run build
+
+  build-docker:
+    runs-on: ubuntu-latest
+    name: Build Docker Images
+    needs: [test-python, test-dotnet, test-frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Python Engine image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.python
+          push: false
+          tags: alpha-squeeze-python:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.api
+          push: false
+          tags: alpha-squeeze-api:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile.web
+          push: false
+          tags: alpha-squeeze-web:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  e2e-tests:
+    runs-on: ubuntu-latest
+    name: E2E Tests
+    needs: [build-docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create .env file
+        run: |
+          echo "MSSQL_SA_PASSWORD=YourStrong@Passw0rd123" >> .env
+          echo "FINMIND_TOKEN=${{ secrets.FINMIND_TOKEN }}" >> .env
+          echo "LINE_NOTIFY_TOKEN=${{ secrets.LINE_NOTIFY_TOKEN }}" >> .env
+
+      - name: Build and start services
+        run: |
+          docker-compose up -d --build
+          sleep 60
+
+      - name: Wait for API to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:5000/health > /dev/null; then
+              echo "API is ready!"
+              break
+            fi
+            echo "Waiting for API... ($i/30)"
+            sleep 5
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Playwright
+        run: |
+          cd web
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: |
+          cd web
+          npx playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:80
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 30
+
+      - name: Stop services
+        if: always()
+        run: docker-compose down -v
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    needs: [e2e-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy notification
+        run: |
+          echo "Deployment would happen here"
+          echo "All tests passed, ready for deployment"

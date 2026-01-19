@@ -1,0 +1,44 @@
+{
+  "commands": [
+    {
+      "name": "squeeze-score",
+      "description": "Analyze a stock ticker for squeeze potential using the Alpha Squeeze algorithm",
+      "prompt": "Analyze the squeeze potential for the specified stock ticker. Use the Squeeze Score algorithm:\n\nS = (0.35 × F_B) + (0.25 × F_G) + (0.20 × F_M) + (0.20 × F_V)\n\nWhere:\n- F_B: Borrowing balance change (法人空頭回補)\n- F_G: IV-HV divergence (Gamma效應)\n- F_M: Margin ratio (散戶燃料/券資比)\n- F_V: Price-volume momentum (價量動能)\n\nProvide:\n1. Each factor's individual score (0-100)\n2. Weighted total score\n3. Trend assessment (BULLISH/NEUTRAL/BEARISH)\n4. Tactical recommendation\n\nIf no data is available, explain what data would be needed."
+    },
+    {
+      "name": "db-schema",
+      "description": "Generate or review MSSQL schema for Alpha Squeeze tables",
+      "prompt": "You are working on the Alpha Squeeze database schema. The main tables are:\n\n1. DailyStockMetrics - Stock daily indicators from FinMind\n2. WarrantMarketData - Warrant data from scrapers\n\nHelp with:\n- Creating new tables following the existing naming conventions\n- Adding indexes for query optimization\n- Writing migration scripts\n- Reviewing schema changes for performance\n\nAlways use Dapper-compatible types and include proper constraints."
+    },
+    {
+      "name": "grpc-proto",
+      "description": "Generate or update gRPC proto definitions for .NET/Python communication",
+      "prompt": "You are working on the gRPC communication layer between .NET and Python. The main proto file is squeeze.proto.\n\nCurrent services:\n- SqueezeEngine: GetSqueezeSignal\n\nHelp with:\n- Adding new RPC methods\n- Defining new message types\n- Ensuring compatibility between .NET and Python\n- Following proto3 best practices\n\nGenerate both the proto definition and implementation stubs for .NET client and Python server."
+    },
+    {
+      "name": "dapper-repo",
+      "description": "Generate Dapper repository pattern code for data access",
+      "prompt": "Generate a Dapper-based repository following the Alpha Squeeze patterns:\n\n1. Interface definition (IXxxRepository)\n2. Implementation class (XxxRepository)\n3. Proper async/await patterns\n4. SQL queries with parameterization\n5. Use SqlBulkCopy for batch operations (1000+ rows)\n\nExample pattern:\n```csharp\npublic interface IStockMetricsRepository\n{\n    Task<IEnumerable<DailyStockMetric>> GetByDateAsync(DateTime date);\n    Task BulkInsertAsync(IEnumerable<DailyStockMetric> metrics);\n}\n```"
+    },
+    {
+      "name": "polars-calc",
+      "description": "Generate Polars DataFrame calculations for quant analysis",
+      "prompt": "Generate Polars code for quantitative calculations in the Alpha Squeeze engine:\n\n1. Use lazy evaluation for large datasets\n2. Prefer column expressions over row-wise operations\n3. Include proper type annotations\n4. Follow the HV/IV calculation patterns\n\nExample pattern:\n```python\nimport polars as pl\n\ndef calculate_squeeze_factors(df: pl.LazyFrame) -> pl.LazyFrame:\n    return df.with_columns([\n        # HV calculation\n        pl.col('close').log().diff().rolling_std(20).mul(252**0.5).alias('hv_20d'),\n        # Other factors...\n    ])\n```"
+    },
+    {
+      "name": "scraper",
+      "description": "Generate Playwright scraper code for warrant data extraction",
+      "prompt": "Generate a Playwright-based scraper for extracting warrant data from Taiwan issuers:\n\n1. Use async/await patterns\n2. Implement retry with exponential backoff (MAX_RETRIES=3)\n3. Log failures to avoid data gaps\n4. Validate scraped data before returning\n5. Respect rate limits with appropriate delays\n\nTarget sources:\n- 元大權證網\n- 統一權證網\n- 公開資訊觀測站 (CB data)\n\nExtract: IV, 實質槓桿, 差槓比, 到期日"
+    },
+    {
+      "name": "line-notify",
+      "description": "Generate LINE Notify integration code for trading alerts",
+      "prompt": "Generate LINE Notify integration for the Alpha Squeeze alert system:\n\n1. .NET HttpClient implementation\n2. Message formatting for squeeze alerts\n3. Daily 20:00 scheduled notification\n4. Include top 5 squeeze candidates with scores\n\nMessage format:\n```\n🚀 Alpha Squeeze 明日軋空清單\n─────────────────\n1. 2330 台積電 (Score: 85)\n   趨勢: BULLISH\n   建議: ...\n─────────────────\n```"
+    },
+    {
+      "name": "test-data",
+      "description": "Generate test data for Alpha Squeeze development",
+      "prompt": "Generate realistic test data for Alpha Squeeze development:\n\n1. DailyStockMetrics sample data (10-20 tickers, 30 days)\n2. WarrantMarketData sample data (matching tickers)\n3. Include edge cases:\n   - High squeeze potential (high margin ratio, negative borrow change)\n   - Low squeeze potential\n   - Missing data scenarios\n\nOutput as SQL INSERT statements or Python fixtures."
+    }
+  ]
+}
