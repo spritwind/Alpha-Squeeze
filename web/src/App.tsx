@@ -4,6 +4,8 @@ import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { StockDetail } from './pages/StockDetail';
 import { MetricsPage } from './pages/MetricsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { CBDashboardPage } from './pages/CBDashboardPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,6 +25,8 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="/stock/:ticker" element={<StockDetail />} />
             <Route path="/metrics" element={<MetricsPage />} />
+            <Route path="/cb" element={<CBDashboardPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

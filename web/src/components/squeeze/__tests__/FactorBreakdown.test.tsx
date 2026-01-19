@@ -33,15 +33,15 @@ describe('FactorBreakdown', () => {
     render(<FactorBreakdown factors={mockFactors} showWeighted />);
 
     // 法人回補: 90 * 0.35 = 31.5
-    expect(screen.getByText('(+31.5)')).toBeInTheDocument();
+    expect(screen.getByText('+31.5')).toBeInTheDocument();
     // Gamma壓縮: 75 * 0.25 = 18.8 (四捨五入)
-    expect(screen.getByText('(+18.8)')).toBeInTheDocument();
+    expect(screen.getByText('+18.8')).toBeInTheDocument();
   });
 
   it('hides weighted scores when showWeighted is false', () => {
     render(<FactorBreakdown factors={mockFactors} showWeighted={false} />);
 
-    expect(screen.queryByText('(+31.5)')).not.toBeInTheDocument();
+    expect(screen.queryByText('+31.5')).not.toBeInTheDocument();
   });
 });
 

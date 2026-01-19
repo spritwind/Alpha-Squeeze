@@ -4,10 +4,10 @@
 polars>=0.20.0
 numpy>=1.24.0
 
-# gRPC
-grpcio>=1.60.0
-grpcio-tools>=1.60.0
-protobuf>=4.25.0
+# gRPC (版本必須一致，避免 protobuf 不匹配問題)
+grpcio>=1.68.0
+grpcio-tools>=1.68.0
+protobuf>=5.29.0,<7.0.0
 
 # FinMind API
 FinMind>=1.0.0

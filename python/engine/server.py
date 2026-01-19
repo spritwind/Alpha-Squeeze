@@ -168,14 +168,66 @@ class SqueezeEngineServicer:
             f"limit={request.limit}, min_score={request.min_score}"
         )
 
-        # TODO: 從資料庫讀取已計算的結果
-        # 目前返回空結果，待整合資料層後實作
+        try:
+            from engine.database import get_database, StockMetricsRepository
 
-        return squeeze_pb2.TopCandidatesResponse(
-            candidates=[],
-            analysis_date=request.date or datetime.now().strftime("%Y-%m-%d"),
-            generated_at=datetime.now().isoformat(),
-        )
+            db = get_database()
+            repo = StockMetricsRepository(db)
+
+            # 取得指定日期的所有股票指標
+            target_date = request.date or datetime.now().strftime("%Y-%m-%d")
+            metrics = repo.get_by_date(target_date)
+
+            candidates = []
+            for m in metrics:
+                # 計算每個標的的軋空分數
+                signal = self.calculator.calculate_squeeze_score(
+                    ticker=m.get("Ticker", ""),
+                    borrow_change=m.get("BorrowingBalanceChange", 0) or 0,
+                    margin_ratio=float(m.get("MarginRatio", 0) or 0),
+                    iv=0,  # IV 需要從權證資料取得
+                    hv=float(m.get("HistoricalVolatility20D", 0) or 0),
+                    price=float(m.get("ClosePrice", 0) or 0),
+                    prev_price=float(m.get("ClosePrice", 0) or 0),
+                    volume=m.get("Volume", 0) or 0,
+                    avg_volume=m.get("Volume", 0) or 0,
+                )
+
+                # 只保留符合最低分數要求的候選
+                if signal.score >= request.min_score:
+                    candidates.append(squeeze_pb2.SqueezeResponse(
+                        ticker=signal.ticker,
+                        score=signal.score,
+                        trend=signal.trend.value,
+                        comment=signal.comment,
+                        factors=squeeze_pb2.FactorScores(
+                            borrow_score=signal.factors.borrow_score,
+                            gamma_score=signal.factors.gamma_score,
+                            margin_score=signal.factors.margin_score,
+                            momentum_score=signal.factors.momentum_score,
+                        ),
+                    ))
+
+            # 依分數排序並限制數量
+            candidates.sort(key=lambda x: x.score, reverse=True)
+            candidates = candidates[:request.limit]
+
+            logger.info(f"找到 {len(candidates)} 個候選標的")
+
+            return squeeze_pb2.TopCandidatesResponse(
+                candidates=candidates,
+                analysis_date=target_date,
+                generated_at=datetime.now().isoformat(),
+            )
+
+        except Exception as e:
+            logger.error(f"查詢熱門候選失敗: {e}", exc_info=True)
+            # 返回空結果而非拋出錯誤
+            return squeeze_pb2.TopCandidatesResponse(
+                candidates=[],
+                analysis_date=request.date or datetime.now().strftime("%Y-%m-%d"),
+                generated_at=datetime.now().isoformat(),
+            )
 
 
 async def serve(port: Optional[int] = None) -> None:

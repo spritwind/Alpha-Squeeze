@@ -1,5 +1,18 @@
 import axios from 'axios';
-import type { SqueezeSignal, TopCandidates, StockMetric, HealthStatus } from '../types';
+import type {
+  SqueezeSignal,
+  TopCandidates,
+  StockMetric,
+  HealthStatus,
+  SqueezeConfigDto,
+  ConfigCategoryDto,
+  WeightsDto,
+  ThresholdsDto,
+  CBWarningDto,
+  CBWarningListResponse,
+  CBIssuanceDto,
+  CBTrackingHistoryDto,
+} from '../types';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -113,6 +126,108 @@ export const metricsApi = {
   getShortCovering: async (limit = 20, date?: string): Promise<StockMetric[]> => {
     const { data } = await api.get('/metrics/short-covering', {
       params: { limit, date },
+    });
+    return data;
+  },
+};
+
+export const configApi = {
+  /**
+   * 取得所有系統配置
+   */
+  getAll: async (): Promise<ConfigCategoryDto[]> => {
+    const { data } = await api.get('/config');
+    return data;
+  },
+
+  /**
+   * 取得軋空演算法配置
+   */
+  getSqueezeConfig: async (): Promise<SqueezeConfigDto> => {
+    const { data } = await api.get('/config/squeeze');
+    return data;
+  },
+
+  /**
+   * 更新軋空演算法配置
+   */
+  updateSqueezeConfig: async (
+    weights: WeightsDto,
+    thresholds: ThresholdsDto
+  ): Promise<SqueezeConfigDto> => {
+    const { data } = await api.put('/config/squeeze', { weights, thresholds });
+    return data;
+  },
+
+  /**
+   * 依分類取得配置
+   */
+  getByCategory: async (category: string): Promise<ConfigCategoryDto> => {
+    const { data } = await api.get(`/config/category/${category}`);
+    return data;
+  },
+
+  /**
+   * 更新單一配置值
+   */
+  updateConfig: async (key: string, value: string): Promise<void> => {
+    await api.put('/config', { key, value });
+  },
+};
+
+// ========== CB 預警燈 API ==========
+
+export const cbApi = {
+  /**
+   * 取得所有 CB 預警清單
+   */
+  getWarnings: async (date?: string, minLevel = 'SAFE'): Promise<CBWarningListResponse> => {
+    const { data } = await api.get('/cb/warnings', {
+      params: { date, minLevel },
+    });
+    return data;
+  },
+
+  /**
+   * 取得單一 CB 預警狀態
+   */
+  getWarning: async (cbTicker: string, date?: string): Promise<CBWarningDto> => {
+    const { data } = await api.get(`/cb/${cbTicker}`, { params: { date } });
+    return data;
+  },
+
+  /**
+   * 取得高風險 CB 排行
+   */
+  getCriticalCBs: async (limit = 10, minDays = 15): Promise<CBWarningDto[]> => {
+    const { data } = await api.get('/cb/critical', {
+      params: { limit, minDays },
+    });
+    return data;
+  },
+
+  /**
+   * 依標的股票取得相關 CB
+   */
+  getByUnderlying: async (ticker: string): Promise<CBWarningDto[]> => {
+    const { data } = await api.get(`/cb/by-underlying/${ticker}`);
+    return data;
+  },
+
+  /**
+   * 取得所有活躍 CB 發行資訊
+   */
+  getIssuances: async (): Promise<CBIssuanceDto[]> => {
+    const { data } = await api.get('/cb/issuances');
+    return data;
+  },
+
+  /**
+   * 取得 CB 歷史追蹤資料
+   */
+  getHistory: async (cbTicker: string, days = 30): Promise<CBTrackingHistoryDto> => {
+    const { data } = await api.get(`/cb/${cbTicker}/history`, {
+      params: { days },
     });
     return data;
   },

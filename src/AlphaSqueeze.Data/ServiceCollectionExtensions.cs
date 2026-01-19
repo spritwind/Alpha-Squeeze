@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISystemConfigRepository, SystemConfigRepository>();
         services.AddScoped<IBackfillJobRepository, BackfillJobRepository>();
         services.AddScoped<ITrackedTickerRepository, TrackedTickerRepository>();
+        services.AddScoped<ICBRepository, CBRepository>();
 
         return services;
     }

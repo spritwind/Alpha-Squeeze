@@ -48,10 +48,11 @@ describe('SqueezeCard', () => {
   it('renders factor breakdown when factors exist', () => {
     render(<SqueezeCard signal={mockSignal} rank={1} />);
 
-    expect(screen.getByText('法人回補')).toBeInTheDocument();
-    expect(screen.getByText('Gamma壓縮')).toBeInTheDocument();
-    expect(screen.getByText('空單擁擠')).toBeInTheDocument();
-    expect(screen.getByText('價量動能')).toBeInTheDocument();
+    // SqueezeCard 使用 compact 模式，顯示短標籤
+    expect(screen.getByText('法人')).toBeInTheDocument();
+    expect(screen.getByText('Gamma')).toBeInTheDocument();
+    expect(screen.getByText('空單')).toBeInTheDocument();
+    expect(screen.getByText('動能')).toBeInTheDocument();
   });
 
   it('handles degraded mode correctly', () => {
@@ -98,19 +99,19 @@ describe('SqueezeCard', () => {
       factors: null, // 不顯示 factors 避免數字重複
     });
 
-    // 高分 (紅色/bullish) - 使用唯一的分數
+    // 高分 (紅色/bullish-400) - 使用唯一的分數
     const { rerender } = render(<SqueezeCard signal={createSignal(71)} rank={1} />);
     let scoreElement = screen.getByText('71');
-    expect(scoreElement.className).toContain('text-bullish');
+    expect(scoreElement.className).toContain('text-bullish-400');
 
-    // 低分 (綠色/bearish)
+    // 低分 (綠色/bearish-400)
     rerender(<SqueezeCard signal={createSignal(39)} rank={1} />);
     scoreElement = screen.getByText('39');
-    expect(scoreElement.className).toContain('text-bearish');
+    expect(scoreElement.className).toContain('text-bearish-400');
 
-    // 中等分數 (灰色/neutral)
+    // 中等分數 (灰色/dark-300)
     rerender(<SqueezeCard signal={createSignal(55)} rank={1} />);
     scoreElement = screen.getByText('55');
-    expect(scoreElement.className).toContain('text-neutral');
+    expect(scoreElement.className).toContain('text-dark-300');
   });
 });
