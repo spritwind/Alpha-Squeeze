@@ -12,6 +12,12 @@ import type {
   CBWarningListResponse,
   CBIssuanceDto,
   CBTrackingHistoryDto,
+  TrackedTickerDto,
+  AddTrackedTickerRequest,
+  BackfillJobDto,
+  DiscoveryPoolResponse,
+  DiscoveryFilterRequest,
+  UserWatchListDto,
 } from '../types';
 
 const api = axios.create({
@@ -303,6 +309,145 @@ export const monitoringApi = {
    */
   getDatabaseHealth: async (): Promise<{ status: string; timestamp: string; message: string }> => {
     const { data } = await api.get('/monitoring/health/database');
+    return data;
+  },
+};
+
+// ========== Discovery API ==========
+
+export const discoveryApi = {
+  /**
+   * 取得最新掃描結果
+   */
+  getLatestPool: async (limit = 100): Promise<DiscoveryPoolResponse> => {
+    const { data } = await api.get('/discovery/pool', { params: { limit } });
+    return data;
+  },
+
+  /**
+   * 依條件篩選掃描結果
+   */
+  filterPool: async (filter: DiscoveryFilterRequest): Promise<DiscoveryPoolResponse> => {
+    const { data } = await api.get('/discovery/pool/filter', { params: filter });
+    return data;
+  },
+
+  /**
+   * 取得掃描配置
+   */
+  getConfig: async (): Promise<Record<string, string>> => {
+    const { data } = await api.get('/discovery/config');
+    return data;
+  },
+
+  /**
+   * 更新掃描配置
+   */
+  updateConfig: async (key: string, value: string): Promise<void> => {
+    await api.put(`/discovery/config/${key}`, { value });
+  },
+
+  /**
+   * 取得用戶追蹤清單
+   */
+  getWatchList: async (): Promise<UserWatchListDto[]> => {
+    const { data } = await api.get('/discovery/watchlist');
+    return data;
+  },
+
+  /**
+   * 新增至追蹤清單
+   */
+  addToWatchList: async (ticker: string, tickerName?: string): Promise<UserWatchListDto> => {
+    const { data } = await api.post('/discovery/watchlist', { ticker, tickerName });
+    return data;
+  },
+
+  /**
+   * 批量新增至追蹤清單
+   */
+  bulkAddToWatchList: async (tickers: string[]): Promise<{ addedCount: number; requestedCount: number }> => {
+    const { data } = await api.post('/discovery/watchlist/bulk', { tickers });
+    return data;
+  },
+
+  /**
+   * 從追蹤清單移除
+   */
+  removeFromWatchList: async (ticker: string): Promise<void> => {
+    await api.delete(`/discovery/watchlist/${ticker}`);
+  },
+
+  /**
+   * 設定追蹤項目啟用狀態
+   */
+  setWatchListActive: async (ticker: string, active: boolean): Promise<void> => {
+    await api.patch(`/discovery/watchlist/${ticker}/active?active=${active}`);
+  },
+};
+
+// ========== Admin API ==========
+
+export const adminApi = {
+  /**
+   * 取得所有追蹤股票
+   */
+  getTickers: async (): Promise<TrackedTickerDto[]> => {
+    const { data } = await api.get('/admin/tickers');
+    return data;
+  },
+
+  /**
+   * 取得啟用中的股票代號
+   */
+  getActiveTickers: async (): Promise<string[]> => {
+    const { data } = await api.get('/admin/tickers/active');
+    return data;
+  },
+
+  /**
+   * 新增追蹤股票
+   */
+  addTicker: async (request: AddTrackedTickerRequest): Promise<TrackedTickerDto> => {
+    const { data } = await api.post('/admin/tickers', request);
+    return data;
+  },
+
+  /**
+   * 更新追蹤股票
+   */
+  updateTicker: async (ticker: string, request: AddTrackedTickerRequest): Promise<TrackedTickerDto> => {
+    const { data } = await api.put(`/admin/tickers/${ticker}`, request);
+    return data;
+  },
+
+  /**
+   * 設定股票啟用狀態
+   */
+  setTickerActive: async (ticker: string, active: boolean): Promise<void> => {
+    await api.patch(`/admin/tickers/${ticker}/active?active=${active}`);
+  },
+
+  /**
+   * 移除追蹤股票
+   */
+  removeTicker: async (ticker: string): Promise<void> => {
+    await api.delete(`/admin/tickers/${ticker}`);
+  },
+
+  /**
+   * 取得回補任務列表
+   */
+  getBackfillJobs: async (limit = 10): Promise<BackfillJobDto[]> => {
+    const { data } = await api.get('/admin/backfill', { params: { limit } });
+    return data;
+  },
+
+  /**
+   * 建立回補任務
+   */
+  createBackfillJob: async (startDate: string, endDate: string, jobType = 'STOCK_METRICS', tickers?: string[]): Promise<BackfillJobDto> => {
+    const { data } = await api.post('/admin/backfill', { startDate, endDate, jobType, tickers });
     return data;
   },
 };

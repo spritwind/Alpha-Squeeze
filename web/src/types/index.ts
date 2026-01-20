@@ -134,3 +134,86 @@ export interface CBTrackingHistoryDto {
   cbTicker: string;
   history: CBDailyTrackingDto[];
 }
+
+// ========== 追蹤股票管理相關型別 ==========
+
+export interface TrackedTickerDto {
+  ticker: string;
+  tickerName?: string;
+  category?: string;
+  isActive: boolean;
+  priority: number;
+  addedAt: string;
+  notes?: string;
+}
+
+export interface AddTrackedTickerRequest {
+  ticker: string;
+  tickerName?: string;
+  category?: string;
+  priority?: number;
+  notes?: string;
+}
+
+export interface BackfillJobDto {
+  id: number;
+  jobType: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  totalTickers: number;
+  processedTickers: number;
+  failedTickers: number;
+  progressPercent: number;
+  errorMessage?: string;
+  startedAt?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+// ========== Discovery 雷達掃描相關型別 ==========
+
+export interface DiscoveryPoolDto {
+  ticker: string;
+  tickerName?: string;
+  industry?: string;
+  closePrice?: number;
+  volume?: number;
+  volMultiplier?: number;
+  shortRatio?: number;
+  marginRatio?: number;
+  hasCB: boolean;
+  cbTicker?: string;
+  cbPriceRatio?: number;
+  squeezeScore?: number;
+  scanDate: string;
+}
+
+export interface DiscoveryPoolResponse {
+  items: DiscoveryPoolDto[];
+  scanDate: string;
+  totalCount: number;
+}
+
+export interface DiscoveryFilterRequest {
+  scanDate?: string;
+  minShortRatio?: number;
+  minVolMultiplier?: number;
+  minPrice?: number;
+  minVolume?: number;
+  hasCB?: boolean;
+  minScore?: number;
+  limit?: number;
+}
+
+export interface UserWatchListDto {
+  ticker: string;
+  tickerName?: string;
+  addedTime: string;
+  addedBy: string;
+  isActive: boolean;
+  priority: number;
+  lastDeepScrapedTime?: string;
+  lastSqueezeScore?: number;
+  notes?: string;
+}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { monitoringApi, type DataSourceStatus, type SystemLogEntry } from '../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -307,14 +308,12 @@ export function MonitoringPage() {
             >
               回補任務管理
             </a>
-            <a
-              href="/api/admin/tickers"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              to="/tickers"
               className="px-4 py-2 rounded-lg bg-accent-500/20 text-accent-400 hover:bg-accent-500/30 transition-colors text-sm"
             >
               追蹤股票管理
-            </a>
+            </Link>
             <button
               onClick={() => addLogMutation.mutate('手動測試日誌 - ' + new Date().toISOString())}
               className="px-4 py-2 rounded-lg bg-dark-700 text-dark-300 hover:bg-dark-600 transition-colors text-sm"
