@@ -228,11 +228,11 @@ public class CBRepository : ICBRepository
         }
 
         return (
-            (int)result.Total,
-            (int)result.CriticalCount,
-            (int)result.WarningCount,
-            (int)result.CautionCount,
-            (int)result.SafeCount
+            (int)(result.Total ?? 0),
+            (int)(result.CriticalCount ?? 0),
+            (int)(result.WarningCount ?? 0),
+            (int)(result.CautionCount ?? 0),
+            (int)(result.SafeCount ?? 0)
         );
     }
 

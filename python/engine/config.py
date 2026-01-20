@@ -16,12 +16,12 @@ class DatabaseSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="DB_")
 
-    server: str = Field(default="localhost", description="MSSQL server host")
+    server: str = Field(default="localhost\\SQLEXPRESS", description="MSSQL server host")
     database: str = Field(default="AlphaSqueeze", description="Database name")
     username: Optional[str] = Field(default=None, description="Database username")
     password: Optional[str] = Field(default=None, description="Database password")
     trusted_connection: bool = Field(default=True, description="Use Windows authentication")
-    driver: str = Field(default="ODBC Driver 18 for SQL Server", description="ODBC driver")
+    driver: str = Field(default="SQL Server", description="ODBC driver")
 
     @property
     def connection_string(self) -> str:
