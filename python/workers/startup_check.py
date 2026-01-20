@@ -18,11 +18,14 @@ from typing import Optional, Tuple
 from engine.config import get_settings
 from engine.database import get_database, DatabaseConnection
 
+# 設定 root logger
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    force=True  # 強制覆蓋既有設定
 )
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class StartupChecker:

@@ -65,7 +65,8 @@ class CBTpexScraper(BaseScraper[list[CBBalanceData]]):
         Returns:
             CB 餘額資料列表
         """
-        trade_date = kwargs.get('trade_date', datetime.now().strftime('%Y-%m-%d'))
+        # 使用 or 確保 None 值也會使用預設值
+        trade_date = kwargs.get('trade_date') or datetime.now().strftime('%Y-%m-%d')
 
         logger.info(f"Scraping CB balance data for {trade_date}")
 
@@ -115,8 +116,9 @@ class CBTpexScraper(BaseScraper[list[CBBalanceData]]):
                 conv_price_str = str(row[5]).replace(',', '').strip()
                 conversion_price = float(conv_price_str) if conv_price_str else 0
 
-                # 到期日
-                maturity_date = self._parse_roc_date(str(row[3]))
+                # 到期日 (處理 None 值)
+                maturity_raw = row[3] if len(row) > 3 else None
+                maturity_date = self._parse_roc_date(str(maturity_raw) if maturity_raw else "")
 
                 results.append(CBBalanceData(
                     cb_ticker=cb_ticker,
