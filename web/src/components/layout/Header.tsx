@@ -66,6 +66,17 @@ export function Header() {
                 </span>
               </Link>
               <Link
+                to="/monitoring"
+                className={cn('nav-link', isActive('/monitoring') && 'active')}
+              >
+                <span className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                  </svg>
+                  系統監控
+                </span>
+              </Link>
+              <Link
                 to="/settings"
                 className={cn('nav-link', isActive('/settings') && 'active')}
               >

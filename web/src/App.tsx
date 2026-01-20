@@ -6,6 +6,7 @@ import { StockDetail } from './pages/StockDetail';
 import { MetricsPage } from './pages/MetricsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CBDashboardPage } from './pages/CBDashboardPage';
+import { MonitoringPage } from './pages/MonitoringPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +27,7 @@ function App() {
             <Route path="/stock/:ticker" element={<StockDetail />} />
             <Route path="/metrics" element={<MetricsPage />} />
             <Route path="/cb" element={<CBDashboardPage />} />
+            <Route path="/monitoring" element={<MonitoringPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Route>
         </Routes>

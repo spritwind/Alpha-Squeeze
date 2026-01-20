@@ -233,4 +233,78 @@ export const cbApi = {
   },
 };
 
+// ========== Monitoring API ==========
+
+export interface DataSourceStatus {
+  name: string;
+  tableName: string;
+  totalRecords: number;
+  lastUpdate: string | null;
+  firstDate: string | null;
+  status: 'OK' | 'EMPTY' | 'ERROR' | 'NOT_EXISTS';
+  errorMessage?: string;
+  additionalInfo?: Record<string, unknown>;
+}
+
+export interface SystemMonitoringData {
+  timestamp: string;
+  overallStatus: 'OK' | 'WARNING' | 'ERROR';
+  dataSources: DataSourceStatus[];
+}
+
+export interface SystemLogEntry {
+  timestamp: string;
+  level: string;
+  source: string;
+  message: string;
+  details?: string;
+}
+
+export interface SystemLogsResponse {
+  logs: SystemLogEntry[];
+  totalCount: number;
+}
+
+export const monitoringApi = {
+  /**
+   * 取得系統監控狀態
+   */
+  getStatus: async (): Promise<SystemMonitoringData> => {
+    const { data } = await api.get('/monitoring/status');
+    return data;
+  },
+
+  /**
+   * 取得系統日誌
+   */
+  getLogs: async (limit = 100, level?: string): Promise<SystemLogsResponse> => {
+    const { data } = await api.get('/monitoring/logs', {
+      params: { limit, level },
+    });
+    return data;
+  },
+
+  /**
+   * 新增系統日誌
+   */
+  addLog: async (message: string, source = 'WebUI', level = 'INFO', details?: string): Promise<void> => {
+    await api.post('/monitoring/logs', { message, source, level, details });
+  },
+
+  /**
+   * 清除日誌
+   */
+  clearLogs: async (): Promise<void> => {
+    await api.delete('/monitoring/logs');
+  },
+
+  /**
+   * 取得資料庫健康狀態
+   */
+  getDatabaseHealth: async (): Promise<{ status: string; timestamp: string; message: string }> => {
+    const { data } = await api.get('/monitoring/health/database');
+    return data;
+  },
+};
+
 export default api;
